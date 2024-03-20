@@ -1,5 +1,5 @@
 local opts = require("silicon.config").opts
-local utils = require('silicon.utils')
+local utils = require("silicon.utils")
 local Job = require("plenary.job")
 local fmt = string.format
 
@@ -34,30 +34,31 @@ request.exec = function(range, show_buffer, copy_to_board)
 
 	local textCode = table.concat(lines, "\n")
 
-  local default_themes = {
-"1337",
-"Coldark-Cold",
-"Coldark-Dark",
-"DarkNeon",
-"Dracula",
-"GitHub",
-"Monokai Extended",
-"Monokai Extended Bright",
-"Monokai Extended Light",
-"Monokai Extended Origin",
-"Nord",
-"OneHalfDark",
-"OneHalfLight",
-"Solarized (dark)",
-"Solarized (light)",
-"Sublime Snazzy",
-"TwoDark",
-"Visual Studio Dark+",
-"ansi",
-"base16",
-"base16-256"}
+	local default_themes = {
+		"1337",
+		"Coldark-Cold",
+		"Coldark-Dark",
+		"DarkNeon",
+		"Dracula",
+		"GitHub",
+		"Monokai Extended",
+		"Monokai Extended Bright",
+		"Monokai Extended Light",
+		"Monokai Extended Origin",
+		"Nord",
+		"OneHalfDark",
+		"OneHalfLight",
+		"Solarized (dark)",
+		"Solarized (light)",
+		"Sublime Snazzy",
+		"TwoDark",
+		"Visual Studio Dark+",
+		"ansi",
+		"base16",
+		"base16-256",
+	}
 
-	if string.lower(opts.theme) == "auto" or not(vim.tbl_contains(default_themes, opts.theme)) then
+	if string.lower(opts.theme) == "auto" or not (vim.tbl_contains(default_themes, opts.theme)) then
 		if utils._os_capture("silicon --version") ~= "silicon 0.5.1" then
 			vim.notify("silicon v0.5.1 is required for automagically creating theme", vim.log.levels.ERROR)
 			return
@@ -70,12 +71,19 @@ request.exec = function(range, show_buffer, copy_to_board)
 			goto skip_build
 		end
 		utils.build_tmTheme()
-		utils.reload_silicon_cache({async = false})
+		utils.reload_silicon_cache({ async = false })
 	end
 
 	::skip_build::
 
-	opts.output = utils._replace_placeholders(opts.output)
+	---@type string
+	local output
+	if type(opts.output) == "function" then
+		output = opts.output()
+	else
+		output = utils._replace_placeholders(opts.output)
+	end
+
 	if #textCode ~= 0 then
 		local args = {
 			"--font",
@@ -126,11 +134,11 @@ request.exec = function(range, show_buffer, copy_to_board)
 		elseif vim.fn.executable("wl-copy") == 1 and copy_to_board then
 			-- Save output to /tmp then copy from there
 			table.insert(args, "--output")
-			opts.output = utils._replace_placeholders("/tmp/SILICON_${year}-${month}-${date}_${time}.png")
-			table.insert(args, opts.output)
+			output = utils._replace_placeholders("/tmp/SILICON_${year}-${month}-${date}_${time}.png")
+			table.insert(args, output)
 		else
 			table.insert(args, "--output")
-			table.insert(args, opts.output)
+			table.insert(args, output)
 		end
 		local job = Job:new({
 			command = "silicon",
@@ -142,11 +150,11 @@ request.exec = function(range, show_buffer, copy_to_board)
 						msg = "Snapped to clipboard"
 						vim.defer_fn(function()
 							if vim.fn.executable("wl-copy") == 1 then
-								vim.api.nvim_exec(fmt("silent !cat %s | wl-copy", opts.output), false)
+								vim.api.nvim_exec(fmt("silent !cat %s | wl-copy", output), false)
 							end
 						end, 0)
 					else
-						msg = string.format("Snap saved to %s", opts.output)
+						msg = string.format("Snap saved to %s", output)
 					end
 					vim.defer_fn(function()
 						vim.notify(msg, vim.log.levels.INFO, { plugin = "silicon.lua" })
