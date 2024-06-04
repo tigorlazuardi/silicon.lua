@@ -148,25 +148,25 @@ request.exec = function(range, show_buffer, copy_to_board)
 					local msg = ""
 					if copy_to_board then
 						msg = "Snapped to clipboard"
-						vim.defer_fn(function()
+						vim.schedule(function()
 							if vim.fn.executable("wl-copy") == 1 then
-								vim.api.nvim_exec(fmt("silent !cat %s | wl-copy", output), false)
+								vim.api.nvim_exec2(fmt("silent !cat %s | wl-copy", output), {})
 							end
-						end, 0)
+						end)
 					else
 						msg = string.format("Snap saved to %s", output)
 					end
-					vim.defer_fn(function()
+					vim.schedule(function()
 						vim.notify(msg, vim.log.levels.INFO, { plugin = "silicon.lua" })
-					end, 0)
+					end)
 				else
-					vim.defer_fn(function()
+					vim.schedule(function()
 						vim.notify(
 							"Some error occured while executing silicon",
 							vim.log.levels.ERROR,
 							{ plugin = "silicon.lua" }
 						)
-					end, 0)
+					end)
 				end
 			end,
 			on_stderr = function(_, data, ...)
